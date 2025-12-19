@@ -92,41 +92,102 @@ Welcome to my Console Music Player
         }
         private async Task SearchAndPlay()
         {
-
+            /*
             Clear();
             CursorVisible = true;
+            */
+            bool stayingInSeachMode = true;
+            while (stayingInSeachMode) {
+                Clear();
+                CursorVisible = true;
 
-            Write("Buscar: ");
-            string query = ReadLine();
-            CursorVisible = false;
+                // Prompt user for search query
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                WriteLine("=== Buscador ===");
+                WriteLine("Escribe tu consulta de búsqueda o deja vacío para volver al menú principal.");
+                Console.ResetColor();
 
-            if (string.IsNullOrWhiteSpace(query)) return;
+                // Get user input
+                Write("Buscar: ");
+                string query = ReadLine();
+                CursorVisible = false;
 
-            var results = await musicManager.SearchVideos(query);
+                // If the user input is empty, exit search mode
+                if (string.IsNullOrWhiteSpace(query)) return;
 
-            if (results.Count == 0)
-            {
-                WriteLine($"No se encontraron resultados para {query}");
-                return;
+                // Search for videos
+                var results = await musicManager.SearchVideos(query);
+
+                if (results.Count == 0)
+                {
+                    WriteLine($"No se encontraron resultados para {query}. Presiona una tecla para volver a intentar");
+                    ReadKey(true);
+                    continue;
+                }
+
+                bool browsingResults = true;
+
+                while (browsingResults)
+                {
+                    // Display search results
+                    string[] resultOptions = new string[results.Count + 2];
+
+                    for (int i = 0; i < results.Count; i++)
+                    {
+                        resultOptions[i] = $"{results[i].Title} | {results[i].Duration}";
+                    }
+
+                    resultOptions[results.Count] = "[Nueva Búsqueda]";
+                    resultOptions[results.Count + 1] = "[ ← Volver al Menú Principal]";
+
+                    // Create and run the search results menu
+                    Menu searchMenu = new Menu($"Resultados para: '{query}'", resultOptions);
+                    int choice = searchMenu.Run();
+
+                    // Handle user choice
+                    if (choice < results.Count)
+                    {
+                        // CASE A: User selected a video to play
+                        var selectedVideo = results[choice];
+                        await musicManager.AddToQueue(selectedVideo);
+
+                        // Inform the user
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        WriteLine("\nAñadido a la cola: " + selectedVideo.Title + ". Puede seguir seleccionando.");
+                        Console.ResetColor();
+                        Thread.Sleep(1000); // Pause for a moment to show the message
+
+                    }
+                    else if (choice == results.Count)
+                    {
+                        // CASE B: User wants to perform a new search
+                        browsingResults = false; // Break out to the outer loop to start a new search
+                    }
+                    else
+                    {
+                        // CASE C: User wants to return to the main menu
+                        browsingResults = false;
+                        stayingInSeachMode = false; // Exit both loops
+                    }
+
+                }
             }
+            
 
-            string[] resultOptions = new string[results.Count + 1];
+            
 
-            for (int i = 0; i < results.Count; i++)
-            {
-                resultOptions[i] = $"{results[i].Title} | {results[i].Duration}";
-            }
-            resultOptions[results.Count] = "[Cancelar]";
+            
 
-            Menu searchMenu = new Menu($"Resultados para: '{query}'", resultOptions);
-            int choice = searchMenu.Run();
+            
 
-            if (choice < results.Count)
-            {
-                var selectedVideo = results[choice];
-                await musicManager.AddToQueue(selectedVideo);
+            
 
-            }
+            
+            
+
+            
+
+            
             
 
         }
