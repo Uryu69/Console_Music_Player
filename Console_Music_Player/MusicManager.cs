@@ -16,6 +16,9 @@ namespace Console_Music_Player
         private bool isManualStop = false;
         public IVideo CurrentTrack { get; private set; }
 
+        //New: Discovery mode
+        public bool IsDiscoverMode { get; set; } = false;
+
         //Cola de reproducción
         public Queue<IVideo> playlist = new Queue<IVideo>();
         public bool Isplaying => waveOut != null && waveOut.PlaybackState == PlaybackState.Playing;
@@ -132,13 +135,15 @@ namespace Console_Music_Player
                 waveOut.Stop();
                 waveOut.Dispose();
                 waveOut = null;
+                Console.Clear();
 
-               
+
             }
         }
 
         private void OnPlaybackStopped(object sender, StoppedEventArgs e)
         {
+            /*
             if(!isManualStop && playlist.Count > 0)
             {
                 Console.WriteLine("\nLa canción terminó. Reproduciendo siguiente...");
@@ -149,8 +154,58 @@ namespace Console_Music_Player
                 Console.WriteLine("\nLista de reprodución finalizada.");
                 CurrentTrack = null;
             }
+            */
+            if (isManualStop) return; // If it was a manual stop, do nothing
+
+            if (playlist.Count > 0)
+            {
+                //normal behavior: There are songs in the playlist
+                Console.WriteLine("\nLa canción terminó. Reproduciendo siguiente...");
+                Task.Run(() => PlayNext());
+            }
+            else if (IsDiscoverMode && CurrentTrack != null)
+            {
+                // Discovery mode: Get related videos
+                Console.WriteLine("\nModo Descubrimiento activo. Buscando canciones relacionadas...");
+                Task.Run(() => PlaySimilarSong());
+            }
+            else
+            {
+                Console.WriteLine("\nLista de reprodución finalizada.");
+                CurrentTrack = null;
+            }
         }
-        
+
+        //New Method : Play Similar Songs
+        public async Task PlaySimilarSong()
+        {
+            try {
+
+                //strategy: Get the video's details and fetch related videos
+                string query = CurrentTrack.Author.ChannelTitle;
+
+                // Fetch related videos
+                var videos = await youtube.Search.GetVideosAsync(query).CollectAsync(20);
+
+                if (videos.Count > 0)
+                {
+                    // Pick a random video from the related videos
+                    Random random = new Random();
+                    var randomVideo = videos[random.Next(videos.Count)];
+
+                    // Add to queue and play
+                    Console.ForegroundColor = ConsoleColor.Magenta;
+                    Console.WriteLine($"\n[Modo Descubrimiento] Reproduciendo canción relacionada: {randomVideo.Title} | {randomVideo.Duration}");
+                    Console.ResetColor();
+
+                    await AddToQueue(randomVideo);
+                }
+            }
+            catch (Exception ex) {
+                Console.WriteLine($"Error en Modo Descubrimiento: {ex.Message}");
+            }
+        }
+
         /*
         {
             var searchResults = await youtube.Search.GetVideosAsync(query).CollectAsync(10);
@@ -233,5 +288,5 @@ namespace Console_Music_Player
         */
 
     }
-    
+
 }

@@ -31,6 +31,13 @@ namespace Console_Music_Player
             {
                 Clear();
 
+                //(ON / OFF) Inidicator
+                string discoveryStatus = musicManager.IsDiscoverMode ? "[ON]" : "[OFF]";
+                string statusColor = musicManager.IsDiscoverMode ? " (Radio Automática)" : "";
+
+                string currentSongTitle = "Nada sonando";
+                if (musicManager.CurrentTrack != null) currentSongTitle = musicManager.CurrentTrack.Title;
+
 
                 string prompt = @"
   __  __           _        ____  _                       
@@ -41,12 +48,20 @@ namespace Console_Music_Player
                                           |___/           
 Welcome to my Console Music Player
 (Press ↑ or ↓ to navigate)";
+
+                string prompt2 = $@"
+----------------------------------------------
+Sonando: {currentSongTitle} {statusColor}
+----------------------------------------------
+";
+
                 string[] options = {
                     "Buscar y Reproducir",
                     "Ver Cola de Reproducción",
                     "Pausar",
                     "Continuar",
                     "Siguiente",
+                    $"Modo Descubrimiento: {discoveryStatus}",
                     "Salir"
                 };
                 Menu mainMenu = new Menu(prompt, options);
@@ -73,6 +88,9 @@ Welcome to my Console Music Player
                        await musicManager.PlayNext();
                        break;
                     case 5:
+                        musicManager.IsDiscoverMode = !musicManager.IsDiscoverMode; // Toggle discover mode
+                        break;
+                    case 6:
                         musicManager.StopCurrent();
                         exitApp();
                         isRunning = false;
@@ -172,24 +190,6 @@ Welcome to my Console Music Player
 
                 }
             }
-            
-
-            
-
-            
-
-            
-
-            
-
-            
-            
-
-            
-
-            
-            
-
         }
 
         private void ShowQueue()
