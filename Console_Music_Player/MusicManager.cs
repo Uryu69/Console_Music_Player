@@ -102,7 +102,25 @@ namespace Console_Music_Player
 
                     // Si falla, sacamos la canción problemática y probamos la siguiente
                     if (playlist.Count > 0) playlist.Dequeue();
-                    await PlayNext();
+                    //await PlayNext();
+                    if (playlist.Count > 0)
+                    {
+                        // Si quedan canciones manuales, probamos la siguiente
+                        await PlayNext();
+                    }
+                    else if (IsDiscoverMode)
+                    {
+                        // 3. NUEVO: Si no queda nada pero el modo Descubrir está ON,
+                        // no te rindas. Busca otra canción distinta automáticamente.
+                        Console.WriteLine("La canción automática falló. Buscando una alternativa...");
+                        await PlaySimilarSong();
+                    }
+                    else
+                    {
+                        // Solo si no hay modo descubrir y la cola está vacía, nos detenemos
+                        CurrentTrack = null;
+                        Console.WriteLine("La cola de reproducción está vacía.");
+                    }
                 }
             }
             else
