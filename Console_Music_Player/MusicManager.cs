@@ -3,6 +3,7 @@ using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 using YoutubeExplode.Common;
 using NAudio.Wave;
+using NAudio.Wasapi;
 using System.Runtime.Serialization;
 
 namespace Console_Music_Player
@@ -58,14 +59,12 @@ namespace Console_Music_Player
                     StopCurrent();
 
                     var streamManifest = await youtube.Videos.Streams.GetManifestAsync(video.Id);
-                    var streamInfo = streamManifest.GetMuxedStreams().Where(s => s.Container == Container.Mp4).GetWithHighestBitrate();
+                    var streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
                    
                     if (streamInfo == null)
                     {
                         Console.WriteLine("Audio puro no compatible. Cambiando a modo compatibilidad...");
-                        streamInfo = streamManifest.GetAudioOnlyStreams()
-                                                   .Where(s => s.Container == Container.Mp4)
-                                                   .GetWithHighestBitrate();
+                        streamInfo = streamManifest.GetAudioOnlyStreams()/**/.GetWithHighestBitrate();
                     }
 
                     if (streamInfo != null)
